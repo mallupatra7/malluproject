@@ -1,0 +1,75 @@
+000100 IDENTIFICATION DIVISION.                                         00010004
+000200 PROGRAM-ID. P10AP01.                                             00020004
+000300 DATA DIVISION.                                                   00030004
+000400 WORKING-STORAGE SECTION.                                         00040004
+000500 01 WS-DETAILS.                                                   00050004
+000600   05 WS-CA          PIC 9(01) VALUE 1.                           00060006
+000700   05 WS-ID          PIC X(05).                                   00070003
+000800   05 WS-CB          PIC X(01).                                   00080003
+000900   COPY DFHAID.                                                   00090005
+001000   COPY P10AS01.                                                  00100005
+001100 LINKAGE SECTION.                                                 00110004
+001200 01 DFHCOMMONAREA      PIC X(07).                                 00120004
+001300 PROCEDURE DIVISION.                                              00130004
+001400 MAIN-PARA.                                                       00140004
+001500      IF EIBCALEN = 0                                             00150005
+001600         PERFORM FIRST-PARA                                       00160005
+001700      ELSE                                                        00170005
+001800         MOVE DFHCOMMAREA TO WS-CA                                00180005
+001900         PERFORM NEXT-PARA                                        00190005
+002000      END-IF.                                                     00200005
+002100 END-PARA.                                                        00210004
+002200      EXEC CICS RETURN                                            00220005
+002300         TRANSID('P10A')                                          00230005
+002400         COMMAREA(WS-DETAILS)                                     00240006
+002500      END-EXEC.                                                   00250005
+002600 FIRST-PARA.                                                      00260004
+002700      MOVE LOW-VALUES TO PROJO                                    00270005
+002800      PERFORM SEND-PARA-1.                                        00280005
+002900 SEND-PARA-1.                                                     00290004
+003000      EXEC CICS SEND                                              00300005
+003100          MAP('PROJ')                                             00310005
+003200          MAPSET('P10AS01')                                       00320005
+003300          FROM(PROJO)                                             00330005
+003400       END-EXEC.                                                  00340005
+003500 RECEIVE-PARA-1.                                                  00350004
+003600       EXEC CICS RECEIVE                                          00360005
+003700           MAP('PROJ')                                            00370005
+003800           MAPSET('P10AS01')                                      00380005
+003900           INTO(PROJI)                                            00390005
+004000       END-EXEC.                                                  00400005
+004100 NEXT-PARA.                                                       00410004
+004200       EVALUATE EIBAID                                            00420005
+004300          WHEN DFHENTER                                           00430005
+004400             PERFORM RECEIVE-PARA-1                               00440000
+004500             PERFORM CHECK-PARA                                   00450000
+004600          WHEN DFHPF3                                             00460005
+004700             PERFORM EXIT-PARA                                    00470000
+004800          WHEN OTHER                                              00480005
+004900             MOVE ' INVALID KEY PRESSED ' TO MSG1O                00490000
+005000             PERFORM SEND-PARA-1                                  00500000
+005100       END-EVALUATE.                                              00510005
+005200 CHECK-PARA.                                                      00520004
+005300       EVALUATE INPUTI                                            00530005
+005400          WHEN '1'                                                00540005
+005500             PERFORM CALL-PARA-2                                  00550001
+005600           WHEN '2'                                               00560005
+005700             PERFORM CALL-PARA-11                                 00570001
+005800           WHEN OTHER                                             00580005
+005900             MOVE ' INVALID OPTION ' TO MSG1O                     00590000
+006000             PERFORM SEND-PARA-1                                  00600000
+006100        END-EVALUATE.                                             00610005
+006200 EXIT-PARA.                                                       00620000
+006300        EXEC CICS RETURN                                          00630005
+006400        END-EXEC.                                                 00640005
+006500 CALL-PARA-2.                                                     00650002
+006600        MOVE 1 TO WS-CA.                                          00660006
+006700        EXEC CICS XCTL                                            00670005
+006800            PROGRAM('P10AP02')                                    00680005
+006900            COMMAREA(WS-DETAILS)                                  00690005
+007000        END-EXEC.                                                 00700005
+007100 CALL-PARA-11.                                                    00710002
+007200        EXEC CICS XCTL                                            00720005
+007300          PROGRAM('P08AP01')                                      00730005
+007400          COMMAREA(WS-DETAILS)                                    00740005
+007500        END-EXEC.                                                 00750005
